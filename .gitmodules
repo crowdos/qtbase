@@ -1,0 +1,3 @@
+[submodule "qtbase"]
+	path = qtbase
+	url = git@github.com:qtproject/qtbase.git
