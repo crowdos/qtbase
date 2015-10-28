@@ -1,0 +1,64 @@
+#!/usr/bin/make -f
+
+%:
+	cd qtbase && ln -sf ../debian && dh $@ && cd -
+
+override_dh_auto_configure:
+	./configure \
+		-confirm-license \
+		-prefix "/usr" \
+		-docdir "/usr/share/qt5/doc" \
+		-datadir "/usr/share/qt5" \
+		-archdatadir "/usr/lib/qt5" \
+		-hostdatadir "/usr/lib/qt5" \
+		-translationdir "/usr/share/qt5/translations" \
+		-sysconfdir "/etc/xdg" \
+		-plugindir "/usr/lib/qt5/plugins" \
+		-importdir "/usr/lib/qt5/imports" \
+		-headerdir "/usr/include/qt5" \
+		-examplesdir "/usr/lib/qt5/examples" \
+		-opensource \
+		-no-sql-mysql \
+		-no-sql-odbc \
+		-no-sql-psql \
+		-plugin-sql-sqlite \
+		-no-sql-sqlite2 \
+		-no-sql-tds \
+		-system-sqlite \
+		-system-harfbuzz \
+		-system-zlib \
+		-system-libpng \
+		-system-libjpeg \
+		-openssl \
+		-no-rpath \
+		-optimized-qmake \
+		-dbus-linked \
+		-no-strip \
+		-no-separate-debug-info \
+		-qpa xcb \
+		-xcb \
+		-glib \
+		-icu \
+		-evdev \
+		-eglfs \
+		-no-gtkstyle \
+		-accessibility \
+		-compile-examples \
+		-no-directfb \
+		-gstreamer 1.0 \
+		-opengl es2 \
+		-libinput \
+		-system-proxies \
+		-no-compile-examples \
+		-verbose \
+#		-no-widgets
+#		-system-pcre \
+
+override_dh_install:
+	mv -f debian/tmp/usr/examples/* debian/tmp/usr/lib/qt5/examples/ || true
+	find debian/tmp -name "*.la" | xargs rm || true
+	dh_install --fail-missing
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -f qtbase/debian

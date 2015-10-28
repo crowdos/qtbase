@@ -1,0 +1,8 @@
+usr/bin/moc
+usr/bin/qdbuscpp2xml
+usr/bin/qdbusxml2cpp
+usr/bin/qdoc
+usr/bin/qlalr
+usr/bin/rcc
+usr/bin/syncqt.pl
+usr/bin/uic
