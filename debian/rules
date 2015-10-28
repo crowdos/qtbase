@@ -1,5 +1,8 @@
 #!/usr/bin/make -f
 
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
 %:
 	cd qtbase && ln -sf ../debian && dh $@ && cd -
 
@@ -9,12 +12,12 @@ override_dh_auto_configure:
 		-prefix "/usr" \
 		-docdir "/usr/share/qt5/doc" \
 		-datadir "/usr/share/qt5" \
-		-archdatadir "/usr/lib/qt5" \
-		-hostdatadir "/usr/lib/qt5" \
+		-archdatadir "/usr/share/qt5" \
 		-translationdir "/usr/share/qt5/translations" \
 		-sysconfdir "/etc/xdg" \
 		-plugindir "/usr/lib/qt5/plugins" \
 		-importdir "/usr/lib/qt5/imports" \
+		-qmldir "/usr/lib/qt5/qml" \
 		-headerdir "/usr/include/qt5" \
 		-examplesdir "/usr/lib/qt5/examples" \
 		-opensource \
@@ -43,7 +46,6 @@ override_dh_auto_configure:
 		-eglfs \
 		-no-gtkstyle \
 		-accessibility \
-		-compile-examples \
 		-no-directfb \
 		-gstreamer 1.0 \
 		-opengl es2 \
@@ -51,14 +53,21 @@ override_dh_auto_configure:
 		-system-proxies \
 		-no-compile-examples \
 		-verbose \
-#		-no-widgets
+		-no-widgets \
 #		-system-pcre \
 
 override_dh_install:
-	mv -f debian/tmp/usr/examples/* debian/tmp/usr/lib/qt5/examples/ || true
-	find debian/tmp -name "*.la" | xargs rm || true
+	rm -f debian/tmp/usr/lib/*.la
+	rm -f debian/tmp/usr/lib/cmake/Qt5*/Q*Plugin.cmake
+	rm -f debian/tmp/usr/lib/libQt5Bootstrap*
+	rm -f debian/tmp/usr/lib/pkgconfig/Qt5Bootstrap.pc
 	dh_install --fail-missing
 
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -f qtbase/debian
+
+override_dh_strip:
+	dh_strip -pqtbase5-dev-tools --dbg-package=qtbase5-dev-tools-dbg
+	dh_strip -pqt5-qmake --dbg-package=qtbase5-dev-tools-dbg
+	dh_strip --remaining-packages --dbg-package=qtbase5-dbg

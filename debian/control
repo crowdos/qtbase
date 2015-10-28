@@ -10,7 +10,6 @@ Build-Depends: debhelper (>= 9),
                libfreetype6-dev,
                libgles2-mesa-dev | libgles2-dev,
                libglib2.0-dev,
-               libglu1-mesa-dev | libglu-dev,
                libgstreamer-plugins-base1.0-dev,
                libgstreamer1.0-dev,
                libharfbuzz-dev,
@@ -77,19 +76,6 @@ Description: Qt 5 network module
  The QtNetwork module offers classes that allow you to write TCP/IP clients and
  servers. It provides classes to make network programming easier and portable.
 
-Package: libqt5opengl5
-Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: Qt 5 OpenGL module
- Qt is a cross-platform C++ application framework. Qt's primary feature
- is its rich set of widgets that provide standard GUI functionality.
- .
- The QtOpenGL module offers classes that make it easy to use OpenGL in Qt
- applications.
- .
- OpenGL is a standard API for rendering 3D graphics. OpenGL only deals with 3D
- rendering and provides little or no support for GUI programming issues.
-
 Package: libqt5sql5
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
@@ -104,7 +90,6 @@ Description: Qt 5 SQL module
 Package: libqt5sql5-sqlite
 Architecture: any
 Multi-Arch: same
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Qt 5 SQLite 3 database driver
  This package contains the SQLite 3 plugin for Qt 5.
@@ -156,26 +141,6 @@ Description: Qt 5 concurrent module
  The QtConcurrent module contains functionality to support concurrent execution
  of program code.
 
-Package: libqt5widgets5
-Architecture: any
-Multi-Arch: same
-Description: Qt 5 widgets module
- Qt is a cross-platform C++ application framework. Qt's primary feature
- is its rich set of widgets that provide standard GUI functionality.
- .
- The QtWidgets module extends QtGui with C++ widget functionality.
-
-Package: libqt5printsupport5
-Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Recommends: libcups2
-Description: Qt 5 print support module
- Qt is a cross-platform C++ application framework. Qt's primary feature
- is its rich set of widgets that provide standard GUI functionality.
- .
- The QtPrintSupport module provides classes to make printing easier and
- portable.
-
 Package: libqt5egldeviceintegration5
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
@@ -195,38 +160,24 @@ Description: Qt 5 XCB platform module
  .
  This module provides XCB integration used on regular desktop Linux platforms.
 
-# TODO
 Package: qtbase5-dev
 Architecture: any
 Section: libdevel
-Depends: libgl1-mesa-dev [!armel !armhf] | libgl-dev [!armel !armhf],
-         libgles2-mesa-dev [armel armhf] | libgles2-dev [armel armhf],
-         libglu1-mesa-dev [!armel !armhf] | libglu-dev [!armel !armhf],
+Depends: libgles2-mesa-dev | libgles2-dev,
          libqt5concurrent5 (= ${binary:Version}),
          libqt5core5 (= ${binary:Version}),
          libqt5dbus5 (= ${binary:Version}),
          libqt5egldeviceintegration5 (= ${binary:Version}) [linux-any],
          libqt5gui5 (= ${binary:Version}),
          libqt5network5 (= ${binary:Version}),
-         libqt5printsupport5 (= ${binary:Version}),
          libqt5sql5 (= ${binary:Version}),
          libqt5test5 (= ${binary:Version}),
-         libqt5widgets5 (= ${binary:Version}),
          libqt5xcbqpa5 (= ${binary:Version}),
          libqt5xml5 (= ${binary:Version}),
          libxext-dev,
          qt5-qmake (= ${binary:Version}),
          qtbase5-dev-tools (= ${binary:Version}),
-         qtchooser,
          ${misc:Depends}
-Recommends: libqt5opengl5-dev (= ${binary:Version})
-Suggests: firebird-dev,
-          libegl1-mesa-dev,
-          libgl1-mesa-dev,
-          libmysqlclient-dev,
-          libpq-dev,
-          libsqlite3-dev,
-          unixodbc-dev
 Description: Qt 5 base development files
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -252,19 +203,6 @@ Description: Qt 5 base private development files
  Qt 5 applications like Qt Creator QML Designer plugin.
  .
  Use at your own risk.
-
-Package: libqt5opengl5-dev
-Architecture: any
-Section: libdevel
-Depends: libqt5opengl5 (= ${binary:Version}),
-         qtbase5-dev (= ${binary:Version}),
-         ${misc:Depends}
-Description: Qt 5 OpenGL library development files
- Qt is a cross-platform C++ application framework. Qt's primary feature
- is its rich set of widgets that provide standard GUI functionality.
- .
- This package contains the development files needed to build Qt 5 applications
- using QtOpenGL library.
 
 Package: qtbase5-dev-tools
 Architecture: any
@@ -346,15 +284,3 @@ Description: Qt 5 base examples debugging symbols
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the debugging symbols for the Qt 5 examples.
-
-# Package: qtbase5-doc-html
-# Priority: extra
-# Architecture: all
-# Section: doc
-# Depends: ${misc:Depends}
-# Description: Qt 5 base HTML documentation
-#  Qt is a cross-platform C++ application framework. Qt's primary feature
-#  is its rich set of widgets that provide standard GUI functionality.
-#  .
-#  This package contains the HTML documentation for the Qt 5 base
-#  libraries.
