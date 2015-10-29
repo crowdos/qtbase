@@ -54,6 +54,7 @@ override_dh_auto_configure:
 		-no-compile-examples \
 		-verbose \
 		-no-widgets \
+		-no-pch \
 #		-system-pcre \
 
 override_dh_install:
