@@ -53,7 +53,6 @@ override_dh_auto_configure:
 		-system-proxies \
 		-no-compile-examples \
 		-verbose \
-		-no-widgets \
 		-no-pch \
 #		-system-pcre \
 

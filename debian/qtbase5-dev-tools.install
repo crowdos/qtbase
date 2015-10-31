@@ -5,3 +5,4 @@ usr/bin/qdoc
 usr/bin/qlalr
 usr/bin/rcc
 usr/bin/syncqt.pl
+usr/bin/uic
