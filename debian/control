@@ -49,7 +49,7 @@ Build-Depends: debhelper (>= 9),
 Standards-Version: 3.9.6
 Homepage: http://qt-project.org/
 
-Package: libqt5core5
+Package: libqt5core5a
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Qt 5 core module
@@ -201,7 +201,7 @@ Architecture: any
 Section: libdevel
 Depends: libgles2-mesa-dev | libgles2-dev,
          libqt5concurrent5 (= ${binary:Version}),
-         libqt5core5 (= ${binary:Version}),
+         libqt5core5a (= ${binary:Version}),
          libqt5dbus5 (= ${binary:Version}),
          libqt5egldeviceintegration5 (= ${binary:Version}) [linux-any],
          libqt5gui5 (= ${binary:Version}),
@@ -301,7 +301,7 @@ Package: qtbase5-dbg
 Priority: extra
 Architecture: any
 Section: debug
-Depends: libqt5core5 (= ${binary:Version}), ${misc:Depends}
+Depends: libqt5core5a (= ${binary:Version}), ${misc:Depends}
 Description: Qt 5 base library debugging symbols
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
