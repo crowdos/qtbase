@@ -7,6 +7,7 @@
 	dh $@ --builddirectory=build --sourcedirectory=qtbase --parallel
 
 override_dh_auto_configure:
+	touch qtbase/.git
 	mkdir build && cd build && ../qtbase/configure \
 		-confirm-license \
 		-prefix "/usr" \
@@ -67,6 +68,7 @@ override_dh_install:
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -rf build
+	rm -rf qtbase/.git
 
 override_dh_strip:
 	dh_strip -pqtbase5-dev-tools --dbg-package=qtbase5-dev-tools-dbg
