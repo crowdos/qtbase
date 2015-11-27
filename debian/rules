@@ -74,3 +74,7 @@ override_dh_strip:
 	dh_strip -pqtbase5-dev-tools --dbg-package=qtbase5-dev-tools-dbg
 	dh_strip -pqt5-qmake --dbg-package=qtbase5-dev-tools-dbg
 	dh_strip --remaining-packages --dbg-package=qtbase5-dbg
+
+# TODO: Workaround https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=797742
+override_dh_fixperms:
+	dh_fixperms -Xqtbase5-examples
