@@ -187,6 +187,24 @@ Description: Qt 5 EGL device integration
  This module provides integration with different EGL devices through
  specific plugins for kms, x11, etc.
 
+Package: libqt5egldeviceintegration5kms
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Qt 5 EGL device integration
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This module provides the KMS EGLFS device integration plugin
+
+Package: libqt5egldeviceintegration5x11
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Qt 5 EGL device integration
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This module provides the X11 EGLFS device integration plugin
+
 Package: libqt5xcbqpa5
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
