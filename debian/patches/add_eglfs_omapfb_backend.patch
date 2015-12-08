@@ -1,0 +1,347 @@
+Index: qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/deviceintegration.pro
+===================================================================
+--- qtbase-5.5.1.orig/qtbase/src/plugins/platforms/eglfs/deviceintegration/deviceintegration.pro
++++ qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/deviceintegration.pro
+@@ -5,3 +5,4 @@ contains(QT_CONFIG, kms): SUBDIRS += egl
+ contains(QT_CONFIG, eglfs_brcm): SUBDIRS += eglfs_brcm
+ contains(QT_CONFIG, eglfs_mali): SUBDIRS += eglfs_mali
+ contains(QT_CONFIG, eglfs_viv): SUBDIRS += eglfs_viv
++SUBDIRS += eglfs_omapfb
+Index: qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/eglfs_omapfb.json
+===================================================================
+--- /dev/null
++++ qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/eglfs_omapfb.json
+@@ -0,0 +1,3 @@
++{
++    "Keys": [ "eglfs_omapfb" ]
++}
+Index: qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/eglfs_omapfb.pro
+===================================================================
+--- /dev/null
++++ qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/eglfs_omapfb.pro
+@@ -0,0 +1,22 @@
++TARGET = qeglfs-omapfb-integration
++
++PLUGIN_TYPE = egldeviceintegrations
++PLUGIN_CLASS_NAME = QEglFSOmapfbIntegrationPlugin
++load(qt_plugin)
++
++QT += core-private gui-private platformsupport-private eglfs_device_lib-private
++
++INCLUDEPATH += $$PWD/../..
++
++CONFIG += egl
++QMAKE_LFLAGS += $$QMAKE_LFLAGS_NOUNDEF
++
++SOURCES += $$PWD/qeglfsomapfbmain.cpp \
++           $$PWD/qeglfsomapfbintegration.cpp
++
++HEADERS += $$PWD/qeglfsomapfbintegration.h
++
++# Avoid X11 header collision
++DEFINES += MESA_EGL_NO_X11_HEADERS
++
++OTHER_FILES += $$PWD/eglfs_omapfb.json
+Index: qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbmain.cpp
+===================================================================
+--- /dev/null
++++ qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbmain.cpp
+@@ -0,0 +1,17 @@
++#include "qeglfsdeviceintegration.h"
++#include "qeglfsomapfbintegration.h"
++
++QT_BEGIN_NAMESPACE
++
++class QEglFSOmapfbIntegrationPlugin : public QEGLDeviceIntegrationPlugin
++{
++  Q_OBJECT
++  Q_PLUGIN_METADATA(IID QEGLDeviceIntegrationFactoryInterface_iid FILE "eglfs_omapfb.json")
++
++public:
++  QEGLDeviceIntegration *create() Q_DECL_OVERRIDE { return new QEglFSOmapfbIntegration; }
++};
++
++QT_END_NAMESPACE
++
++#include "qeglfsomapfbmain.moc"
+Index: qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.cpp
+===================================================================
+--- /dev/null
++++ qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.cpp
+@@ -0,0 +1,231 @@
++#include "qeglfsomapfbintegration.h"
++#include <QDebug>
++#include <linux/omapfb.h>
++#include <sys/ioctl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <private/qcore_unix_p.h>
++#include <cerrno>
++#include <cstring>
++
++QT_BEGIN_NAMESPACE
++
++void QEglFSOmapfbIntegration::platformInit()
++{
++  m_fd = qt_safe_open("/dev/fb0", O_RDWR, 0);
++  if (m_fd == -1) {
++    qFatal("Cannot open framebuffer device: %s", std::strerror(errno));
++  }
++
++  enum omapfb_update_mode update_mode = OMAPFB_AUTO_UPDATE;
++  if (ioctl(m_fd, OMAPFB_SET_UPDATE_MODE, &update_mode) == -1) {
++    qWarning("Cannot set OMAPFB_SET_UPDATE_MODE: %s", std::strerror(errno));
++    m_manual = true;
++  } else {
++    m_manual = false;
++  }
++
++  struct fb_var_screeninfo var;
++  struct fb_fix_screeninfo fix;
++  struct omapfb_display_info di;
++  struct omapfb_plane_info plane_info;
++
++  if (ioctl(m_fd, FBIOGET_FSCREENINFO, &fix) == -1) {
++    qFatal("Cannot get fb FBIOGET_FSCREENINFO: %s", std::strerror(errno));
++  }
++
++  if (ioctl(m_fd, FBIOGET_VSCREENINFO, &var) == -1) {
++    qFatal("Cannot get fb FBIOGET_VSCREENINFO: %s", std::strerror(errno));
++  }
++
++  var.xres_virtual = var.xres;
++  var.yres_virtual = var.yres;
++
++  if (ioctl(m_fd, FBIOPUT_VSCREENINFO, &var) == -1) {
++    qFatal("Cannot get fb FBIOGET_VSCREENINFO: %s", std::strerror(errno));
++  }
++
++  if (ioctl(m_fd, FBIOGET_VSCREENINFO, &var) == -1) {
++    qFatal("Cannot get fb FBIOGET_VSCREENINFO: %s", std::strerror(errno));
++  }
++
++  if (ioctl(m_fd, OMAPFB_GET_DISPLAY_INFO, &di) == -1) {
++    qFatal("Cannot get fb OMAPFB_GET_DISPLAY_INFO: %s", std::strerror(errno));
++  }
++
++  if (ioctl(m_fd, OMAPFB_QUERY_PLANE, &plane_info) == -1) {
++    qFatal("Cannot set OMAPFB_QUERY_PLANE: %s", std::strerror(errno));
++  }
++
++  plane_info.enabled = 1;
++  plane_info.pos_x = 0;
++  plane_info.pos_y = 0;
++  plane_info.out_width = di.xres;
++  plane_info.out_height = di.yres;
++
++  if (ioctl(m_fd, OMAPFB_SETUP_PLANE, &plane_info) == -1) {
++    qWarning("Cannot set OMAPFB_SETUP_PLANE: %s", std::strerror(errno));
++  }
++
++  m_screenSize = QSize(di.xres, di.yres);
++  m_physicalSize = QSizeF(di.width / 1000.0f, di.height / 1000.0f);
++
++  qDebug() << "var screen info\n"
++	   << "visible width" << var.xres << "\n"
++	   << "visible height" << var.yres << "\n"
++	   << "virtual width" << var.xres_virtual << "\n"
++	   << "virtual height" << var.yres_virtual << "\n"
++	   << "x offset" << var.xoffset << "\n"
++	   << "y offset" << var.yoffset;
++
++  qDebug() << "omapfb display info\n"
++	   << "xres" << di.xres << "\n"
++	   << "yres" << di.yres << "\n"
++	   << "width (mm)" << di.width / 1000.0 << "\n"
++	   << "height (mm)" << di.height / 1000.0;
++
++  qDebug() << "omapfb plane info\n"
++	   << "x pos" << plane_info.pos_x << "\n"
++	   << "y pos" << plane_info.pos_y << "\n"
++	   << "out width" << plane_info.out_width << "\n"
++	   << "out height" << plane_info.out_height << "\n"
++	   << "enabled" << plane_info.enabled << "\n"
++	   << "mirror" << plane_info.mirror << "\n"
++	   << "mem index" << plane_info.mem_idx << "\n"
++	   << "out channel" << plane_info.channel_out;
++}
++
++void QEglFSOmapfbIntegration::platformDestroy() {
++  qt_safe_close(m_fd);
++  m_fd = -1;
++}
++
++QSizeF QEglFSOmapfbIntegration::physicalScreenSize() const {
++  return m_physicalSize;
++}
++
++QSize QEglFSOmapfbIntegration::screenSize() const
++{
++  return m_screenSize;
++}
++
++QSurfaceFormat QEglFSOmapfbIntegration::surfaceFormatFor(const QSurfaceFormat &inputFormat) const
++{
++  QSurfaceFormat format(inputFormat);
++  format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
++  format.setRedBufferSize(5);
++  format.setGreenBufferSize(6);
++  format.setBlueBufferSize(5);
++
++  return format;
++}
++
++EGLNativeDisplayType QEglFSOmapfbIntegration::platformDisplay() const
++{
++  return EGL_DEFAULT_DISPLAY;
++}
++
++EGLNativeWindowType QEglFSOmapfbIntegration::createNativeWindow(QPlatformWindow *window,
++								const QSize &size,
++								const QSurfaceFormat &format)
++{
++  Q_UNUSED(window);
++  Q_UNUSED(format);
++  Q_UNUSED(size);
++
++  return 0;
++}
++
++void QEglFSOmapfbIntegration::destroyNativeWindow(EGLNativeWindowType window)
++{
++  Q_UNUSED(window);
++}
++
++int QEglFSOmapfbIntegration::framebufferIndex() const
++{
++  return 0;
++}
++
++void QEglFSOmapfbIntegration::waitForVSync(QPlatformSurface *surface) const
++{
++  Q_UNUSED(surface);
++
++  if (!m_manual) {
++    return;
++  }
++
++  if (ioctl(m_fd, OMAPFB_SYNC_GFX) == -1) {
++    qWarning("OMAPFB_SYNC_GFX failed: %s", std::strerror(errno));
++  }
++
++#if 0
++  if (ioctl(m_fd, OMAPFB_WAITFORVSYNC) == -1) {
++    qWarning("OMAPFB_WAITFORVSYNC failed: %s", std::strerror(errno));
++  }
++#endif
++}
++
++void QEglFSOmapfbIntegration::presentBuffer(QPlatformSurface *surface)
++{
++  Q_UNUSED(surface);
++
++  if (!m_manual) {
++    return;
++  }
++
++  struct omapfb_update_window uw;
++  uw.x = 0;
++  uw.y = 0;
++  uw.width = m_screenSize.width();
++  uw.height = m_screenSize.height();
++  uw.out_x = 0;
++  uw.out_y = 0;
++  uw.out_width = m_screenSize.width();
++  uw.out_height = m_screenSize.height();
++  uw.format = 0;
++
++  if (ioctl(m_fd, OMAPFB_UPDATE_WINDOW, &uw) == -1) {
++    qWarning("OMAPFB_UPDATE_WINDOW failed: %s", std::strerror(errno));
++  }
++}
++
++bool QEglFSOmapfbIntegration::supportsPBuffers() const
++{
++  return true;
++}
++
++int QEglFSOmapfbIntegration::screenDepth() const
++{
++  return 16;
++}
++
++QImage::Format QEglFSOmapfbIntegration::screenFormat() const
++{
++  return QImage::Format_RGB16;
++}
++
++qreal QEglFSOmapfbIntegration::refreshRate() const
++{
++  // TODO:
++  return 30;
++}
++
++Qt::ScreenOrientation QEglFSOmapfbIntegration::nativeOrientation() const
++{
++  return Qt::LandscapeOrientation;
++}
++
++bool QEglFSOmapfbIntegration::hasCapability(QPlatformIntegration::Capability cap) const
++{
++  switch (cap) {
++  case QPlatformIntegration::OpenGL:
++    return true;
++  case QPlatformIntegration::ThreadedOpenGL: // TODO: Not sure
++  case QPlatformIntegration::ThreadedPixmaps: // TODO: Not sure
++  default:
++    return false;
++  }
++}
++
++QT_END_NAMESPACE
+Index: qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.h
+===================================================================
+--- /dev/null
++++ qtbase-5.5.1/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.h
+@@ -0,0 +1,40 @@
++#ifndef QEGLFSOMAPFBINTEGRATION_H
++#define QEGLFSOMAPFBINTEGRATION_H
++
++#include "qeglfsdeviceintegration.h"
++#include <QtCore/QVariant>
++
++QT_BEGIN_NAMESPACE
++
++class QEglFSOmapfbIntegration : public QEGLDeviceIntegration
++{
++public:
++  void platformInit() Q_DECL_OVERRIDE;
++  void platformDestroy() Q_DECL_OVERRIDE;
++  QSizeF physicalScreenSize() const Q_DECL_OVERRIDE;
++  QSize screenSize() const Q_DECL_OVERRIDE;
++  QSurfaceFormat surfaceFormatFor(const QSurfaceFormat &inputFormat) const Q_DECL_OVERRIDE;
++  EGLNativeWindowType createNativeWindow(QPlatformWindow *window, const QSize &size,
++					 const QSurfaceFormat &format) Q_DECL_OVERRIDE;
++  void destroyNativeWindow(EGLNativeWindowType window) Q_DECL_OVERRIDE;
++  EGLNativeDisplayType platformDisplay() const Q_DECL_OVERRIDE;
++  int framebufferIndex() const Q_DECL_OVERRIDE;
++  void waitForVSync(QPlatformSurface *surface) const Q_DECL_OVERRIDE;
++  void presentBuffer(QPlatformSurface *surface) Q_DECL_OVERRIDE;
++  bool supportsPBuffers() const Q_DECL_OVERRIDE;
++  int screenDepth() const Q_DECL_OVERRIDE;
++  QImage::Format screenFormat() const Q_DECL_OVERRIDE;
++  qreal refreshRate() const Q_DECL_OVERRIDE;
++  Qt::ScreenOrientation nativeOrientation() const Q_DECL_OVERRIDE;
++  bool hasCapability(QPlatformIntegration::Capability cap) const Q_DECL_OVERRIDE;
++
++private:
++  int m_fd;
++  bool m_manual;
++  QSize m_screenSize;
++  QSizeF m_physicalSize;
++};
++
++QT_END_NAMESPACE
++
++#endif /* QEGLFSOMAPFBINTEGRATION_H */

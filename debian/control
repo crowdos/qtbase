@@ -45,7 +45,8 @@ Build-Depends: debhelper (>= 9),
                libxrender-dev,
                publicsuffix,
                zlib1g-dev,
-               libgbm-dev
+               libgbm-dev,
+               quilt
 Standards-Version: 3.9.6
 Homepage: http://qt-project.org/
 
@@ -204,6 +205,15 @@ Description: Qt 5 EGL device integration
  is its rich set of widgets that provide standard GUI functionality.
  .
  This module provides the X11 EGLFS device integration plugin
+
+Package: libqt5egldeviceintegration5omapfb
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Qt 5 EGL device integration
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This module provides the OMAPFB EGLFS device integration plugin
 
 Package: libqt5xcbqpa5
 Architecture: any
