@@ -1,0 +1,50 @@
+--- a/qtbase/src/plugins/platforms/eglfs/qeglfsdeviceintegration.cpp
++++ b/qtbase/src/plugins/platforms/eglfs/qeglfsdeviceintegration.cpp
+@@ -309,4 +309,9 @@
+     return true;
+ }
+ 
++void *QEGLDeviceIntegration::nativeResourceForIntegration(const QByteArray &resource)
++{
++  return Q_NULLPTR;
++}
++
+ QT_END_NAMESPACE
+--- a/qtbase/src/plugins/platforms/eglfs/qeglfsdeviceintegration.h
++++ b/qtbase/src/plugins/platforms/eglfs/qeglfsdeviceintegration.h
+@@ -92,6 +92,7 @@
+     virtual QByteArray fbDeviceName() const;
+     virtual int framebufferIndex() const;
+     virtual bool supportsPBuffers() const;
++    virtual void *nativeResourceForIntegration(const QByteArray &resource);
+ };
+ 
+ class Q_EGLFS_EXPORT QEGLDeviceIntegrationPlugin : public QObject
+--- a/qtbase/src/plugins/platforms/eglfs/qeglfsintegration.cpp
++++ b/qtbase/src/plugins/platforms/eglfs/qeglfsintegration.cpp
+@@ -171,4 +171,14 @@
+     return chooser.chooseConfig();
+ }
+ 
++void *QEglFSIntegration::nativeResourceForIntegration(const QByteArray &resource)
++{
++  void *result = QEGLPlatformIntegration::nativeResourceForIntegration(resource);
++
++  if (result)
++    return result;
++
++  return qt_egl_device_integration()->nativeResourceForIntegration(resource);
++}
++
+ QT_END_NAMESPACE
+--- a/qtbase/src/plugins/platforms/eglfs/qeglfsintegration.h
++++ b/qtbase/src/plugins/platforms/eglfs/qeglfsintegration.h
+@@ -56,6 +56,8 @@
+ 
+     static EGLConfig chooseConfig(EGLDisplay display, const QSurfaceFormat &format);
+ 
++    virtual void *nativeResourceForIntegration(const QByteArray &resource) Q_DECL_OVERRIDE;
++
+ protected:
+     QEGLPlatformWindow *createWindow(QWindow *window) const Q_DECL_OVERRIDE;
+     QEGLPlatformContext *createContext(const QSurfaceFormat &format,

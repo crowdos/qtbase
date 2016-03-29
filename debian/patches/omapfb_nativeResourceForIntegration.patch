@@ -1,0 +1,88 @@
+--- a/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.cpp
++++ b/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.cpp
+@@ -1,13 +1,18 @@
+ #include "qeglfsomapfbintegration.h"
+ #include <QDebug>
++#include <linux/fb.h>
+ #include <linux/omapfb.h>
+ #include <sys/ioctl.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
++#include <unistd.h>
+ #include <private/qcore_unix_p.h>
+ #include <cerrno>
+ #include <cstring>
++#include <string>
++
++#define FB_BLANK_PATH "/sys/class/graphics/fb0/blank"
+ 
+ QT_BEGIN_NAMESPACE
+ 
+@@ -18,6 +23,11 @@
+     qFatal("Cannot open framebuffer device: %s", std::strerror(errno));
+   }
+ 
++  m_blank = qt_safe_open(FB_BLANK_PATH, O_RDWR, 0);
++  if (m_blank == -1) {
++    qFatal("Cannot open %s: %s", FB_BLANK_PATH, std::strerror(errno));
++  }
++
+   enum omapfb_update_mode update_mode = OMAPFB_AUTO_UPDATE;
+   if (ioctl(m_fd, OMAPFB_SET_UPDATE_MODE, &update_mode) == -1) {
+     qWarning("Cannot set OMAPFB_SET_UPDATE_MODE: %s", std::strerror(errno));
+@@ -99,6 +109,9 @@
+ void QEglFSOmapfbIntegration::platformDestroy() {
+   qt_safe_close(m_fd);
+   m_fd = -1;
++
++  qt_safe_close(m_blank);
++  m_blank = -1;
+ }
+ 
+ QSizeF QEglFSOmapfbIntegration::physicalScreenSize() const {
+@@ -228,4 +241,28 @@
+   }
+ }
+ 
++void *QEglFSOmapfbIntegration::nativeResourceForIntegration(const QByteArray &resource)
++{
++  QByteArray lowerCaseResource = resource.toLower();
++
++  // This "interface" is stolen from
++  // github.com/mer-hybris/qt5-qpa-hwcomposer-plugin/blob/master/hwcomposer/qeglfsintegration.cpp
++
++  if (lowerCaseResource == "displayoff") {
++    blankDisplay(true);
++  } else if (lowerCaseResource == "displayon") {
++    // Called from lipstick to turn on the display (src/homeapplication.cpp)
++    blankDisplay(false);
++  }
++
++  return 0;
++}
++
++void QEglFSOmapfbIntegration::blankDisplay(bool blank)
++{
++  std::string str = blank ? std::to_string(FB_BLANK_POWERDOWN) : std::to_string(FB_BLANK_UNBLANK);
++
++  ::write(m_blank, str.c_str(), str.size());
++}
++
+ QT_END_NAMESPACE
+--- a/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.h
++++ b/qtbase/src/plugins/platforms/eglfs/deviceintegration/eglfs_omapfb/qeglfsomapfbintegration.h
+@@ -27,9 +27,13 @@
+   qreal refreshRate() const Q_DECL_OVERRIDE;
+   Qt::ScreenOrientation nativeOrientation() const Q_DECL_OVERRIDE;
+   bool hasCapability(QPlatformIntegration::Capability cap) const Q_DECL_OVERRIDE;
++  void *nativeResourceForIntegration(const QByteArray &resource) Q_DECL_OVERRIDE;
+ 
+ private:
++  void blankDisplay(bool blank);
++
+   int m_fd;
++  int m_blank;
+   bool m_manual;
+   QSize m_screenSize;
+   QSizeF m_physicalSize;

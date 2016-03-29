@@ -1,1 +1,3 @@
 add_eglfs_omapfb_backend.patch
+eglfs_nativeResourceForIntegration.patch
+omapfb_nativeResourceForIntegration.patch
